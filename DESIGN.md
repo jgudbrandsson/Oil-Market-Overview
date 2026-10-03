@@ -40,7 +40,7 @@ Not available free: true replenishment lead times, tanker flows (Kpler/Vortexa),
 |---|---|---|
 | wti_spot | EIA `PET.RWTC.D` | $/bbl |
 | brent_spot | EIA `PET.RBRTE.D` | $/bbl |
-| rbob_nyh | EIA `PET.EER_EPMRU_PF4_Y35NY_DPG.D` | $/gal |
+| gasoline_nyh | EIA `PET.EER_EPMRU_PF4_Y35NY_DPG.D` (NY Harbor conventional regular, the free daily proxy for RBOB) | $/gal |
 | ulsd_nyh | EIA `PET.EER_EPD2DXL0_PF4_Y35NY_DPG.D` | $/gal |
 | crude_stocks_ex_spr | EIA `PET.WCESTUS1.W` | kbbl |
 | cushing_stocks | EIA `PET.W_EPC0_SAX_YCUOK_MBBL.W` | kbbl |
@@ -58,7 +58,7 @@ Start with these. Add series only when a panel needs them.
 ## 3. Architecture
 
 ```
-systemd timer ──► fetchers/<source>.py ──► observations / curve_snapshots (SQLite, WAL)
+systemd timer ──► oildash/fetchers/<source>.py ──► observations / curve_snapshots (SQLite, WAL)
                                                 │
                                    transforms (SQL views, computed on read)
                                                 │
@@ -130,7 +130,7 @@ Daily series: ~15 × 260 trading days × 25 years ≈ 100k rows. Curve: 4 roots 
 | View | Formula | Reads as |
 |---|---|---|
 | `v_brent_wti` | Brent − WTI | Transatlantic tightness / US export pull |
-| `v_crack_321` | (2 × RBOB × 42 + 1 × ULSD × 42 − 3 × WTI) / 3 | Refinery margin, $/bbl. Note the ×42 gal→bbl conversion |
+| `v_crack_321` | (2 × gasoline × 42 + 1 × ULSD × 42 − 3 × WTI) / 3 | Refinery margin, $/bbl. Note the ×42 gal→bbl conversion |
 | `v_curve_slope` | M1 − M12 (fallback M1 − M4), and as % of M1 | > 0 backwardation = barrels wanted now; < 0 contango = surplus/storage play |
 | `v_stocks_vs_5y` | Weekly stock vs min/avg/max of same ISO week over prior 5 years | Deviation from band matters, level doesn't |
 | `v_cot_mm_net` | (MM long − MM short) / open interest | Speculative positioning, normalised |
@@ -158,7 +158,7 @@ Rule of thumb: a price move backed by backwardation **and** below-band stocks is
 |---|---|---|
 | Power loss mid-transaction | SQLite WAL rolls back the uncommitted run; DB stays consistent | One transaction per source run. `fetch_log` row stays `running` → next run marks it `error` and retries. |
 | Missed scheduled run (Pi off) | Data gap until next run | systemd timer with `Persistent=true` runs on boot. Fetchers always request a trailing window (e.g. last 30 days), so gaps self-heal via upsert. |
-| SD card corruption | DB lost | Everything except `curve_snapshots` is re-downloadable from source history → a `backfill` command rebuilds it. Back up **only** what can't be re-fetched: nightly `sqlite3 .backup` of the DB to a non-SD location. |
+| SD card corruption | DB lost | Everything except `curve_snapshots` is re-downloadable from source history → `python -m oildash fetch <source> --start 2000-01-01` rebuilds it. Back up **only** what can't be re-fetched: nightly `sqlite3 .backup` of the DB to a non-SD location. |
 | Source down / format change | That panel goes stale | Per-source process + staleness badge (C6). Fetcher fails loudly in `journalctl`. |
 | Yahoo breaks permanently | Curve shrinks to M1–M4 | EIA futures as the authoritative fallback (§2). |
 | Clock skew after power loss | Wrong `fetched_at` | Cosmetic only — `obs_date` comes from the source, not the clock. |
@@ -167,19 +167,22 @@ The key insight: the curve history is the only irreplaceable data. Yahoo drops e
 
 ## 8. Schedule (systemd timers, times in ET)
 
+One service + timer pair per source (C6). Every fetch first syncs tables, views and the `series` table from `config.toml`.
+
 | Unit | When | Why |
 |---|---|---|
-| `oil-fetch-daily` | Mon–Fri 19:00 | After NYMEX settle; EIA spot, futures, Yahoo curve, FRED |
-| `oil-fetch-weekly` | Wed 12:00, Thu 12:00 | WPSR; Thursday run covers holiday weeks, upserts make it harmless |
-| `oil-fetch-friday` | Fri 17:00 | Baker Hughes + COT |
-| `oil-fetch-monthly` | 20th of month | JODI |
+| `oil-fetch-eia` | Mon–Fri 19:00; Wed, Thu 12:00 | Daily spot after NYMEX settle; WPSR stocks (Thursday run covers holiday weeks, upserts make it harmless) |
+| `oil-fetch-yahoo` | Mon–Fri 19:00 | Curve snapshot |
+| `oil-fetch-cftc`, `oil-fetch-bakerhughes` | Fri 17:00 | COT, rig count |
+| `oil-fetch-jodi` | 20th of month | JODI |
 | `oil-backup` | Daily 03:00 | `.backup` to off-SD storage |
 
 ## 9. Repo layout
 
 ```
 oil-dash/
-├── fetchers/        # eia.py, fred.py, cftc.py, bakerhughes.py, yahoo.py, jodi.py
+├── oildash/         # python -m oildash {init-db, fetch <source>}
+│   └── fetchers/    # eia.py, then cftc.py, bakerhughes.py, yahoo.py, …
 ├── db/              # schema.sql, views.sql
 ├── dashboard/       # grafana provisioning (datasource + dashboard JSON)
 ├── systemd/         # *.service, *.timer — versioned

@@ -1,0 +1,63 @@
+# oil-dash configuration. API keys come from the environment, never this file.
+# The database path can be overridden with OIL_DASH_DB.
+
+db_path = "/var/lib/oil-dash/oil.db"
+
+# Series are added only when a panel needs them (CLAUDE.md).
+# EIA ids are API v2 "seriesid" ids.
+
+[[series]]
+key = "wti_spot"
+source = "eia"
+source_id = "PET.RWTC.D"
+unit = "$/bbl"
+frequency = "D"
+
+[[series]]
+key = "brent_spot"
+source = "eia"
+source_id = "PET.RBRTE.D"
+unit = "$/bbl"
+frequency = "D"
+
+[[series]]
+key = "gasoline_nyh"
+source = "eia"
+source_id = "PET.EER_EPMRU_PF4_Y35NY_DPG.D"
+unit = "$/gal"
+frequency = "D"
+
+[[series]]
+key = "ulsd_nyh"
+source = "eia"
+source_id = "PET.EER_EPD2DXL0_PF4_Y35NY_DPG.D"
+unit = "$/gal"
+frequency = "D"
+
+[[series]]
+key = "crude_stocks_ex_spr"
+source = "eia"
+source_id = "PET.WCESTUS1.W"
+unit = "kbbl"
+frequency = "W"
+
+[[series]]
+key = "cushing_stocks"
+source = "eia"
+source_id = "PET.W_EPC0_SAX_YCUOK_MBBL.W"
+unit = "kbbl"
+frequency = "W"
+
+[[series]]
+key = "gasoline_stocks"
+source = "eia"
+source_id = "PET.WGTSTUS1.W"
+unit = "kbbl"
+frequency = "W"
+
+[[series]]
+key = "distillate_stocks"
+source = "eia"
+source_id = "PET.WDISTUS1.W"
+unit = "kbbl"
+frequency = "W"
