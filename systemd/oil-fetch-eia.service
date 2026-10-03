@@ -1,0 +1,14 @@
+[Unit]
+Description=oil-dash: fetch EIA spot prices and weekly stocks
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=oildash
+WorkingDirectory=/opt/oil-dash
+# Holds EIA_API_KEY=... (chmod 600, not in git)
+EnvironmentFile=/etc/oil-dash/env
+# Creates /var/lib/oil-dash owned by the service user
+StateDirectory=oil-dash
+ExecStart=/opt/oil-dash/.venv/bin/python -m oildash fetch eia

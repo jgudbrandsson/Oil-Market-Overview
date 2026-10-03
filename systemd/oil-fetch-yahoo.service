@@ -1,0 +1,11 @@
+[Unit]
+Description=oil-dash: fetch Yahoo CL contracts M1-M12 into the curve
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=oildash
+WorkingDirectory=/opt/oil-dash
+StateDirectory=oil-dash
+ExecStart=/opt/oil-dash/.venv/bin/python -m oildash fetch yahoo

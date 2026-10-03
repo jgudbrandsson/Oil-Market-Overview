@@ -1,0 +1,13 @@
+[Unit]
+Description=oil-dash: fetch EIA WTI futures contracts 1-4 into the curve
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=oildash
+WorkingDirectory=/opt/oil-dash
+# Holds EIA_API_KEY=... (chmod 600, not in git)
+EnvironmentFile=/etc/oil-dash/env
+StateDirectory=oil-dash
+ExecStart=/opt/oil-dash/.venv/bin/python -m oildash fetch eia-curve

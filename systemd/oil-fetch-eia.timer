@@ -1,0 +1,14 @@
+[Unit]
+Description=oil-dash: EIA fetch schedule
+
+[Timer]
+# Daily prices, after the NYMEX settle
+OnCalendar=Mon..Fri 19:00 America/New_York
+# Weekly Petroleum Status Report (Wed 10:30 ET; Thu on holiday weeks)
+OnCalendar=Wed,Thu 12:00 America/New_York
+# Run on boot if the Pi was off at a scheduled time
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

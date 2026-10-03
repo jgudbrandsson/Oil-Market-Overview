@@ -1,0 +1,11 @@
+[Unit]
+Description=oil-dash: copy the database off the SD card
+
+[Service]
+Type=oneshot
+User=oildash
+WorkingDirectory=/opt/oil-dash
+# Holds OIL_DASH_BACKUP_DIR=/mnt/<disk>/oil-dash (a folder on the USB disk or NAS)
+EnvironmentFile=/etc/oil-dash/env
+# Refuses to run if the folder is missing or on the same disk as the database
+ExecStart=/opt/oil-dash/.venv/bin/python -m oildash backup --keep 14

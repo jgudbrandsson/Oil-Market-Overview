@@ -1,0 +1,84 @@
+{
+ "chart": {
+  "result": [
+   {
+    "meta": {
+     "currency": "USD",
+     "symbol": "CLZ26.NYM",
+     "exchangeName": "NYM",
+     "fullExchangeName": "NY Mercantile",
+     "instrumentType": "FUTURE",
+     "firstTradeDate": 1290000000,
+     "regularMarketTime": 1790980200,
+     "gmtoffset": -14400,
+     "timezone": "EDT",
+     "exchangeTimezoneName": "America/New_York",
+     "regularMarketPrice": 73.02,
+     "priceHint": 2,
+     "dataGranularity": "1d",
+     "range": ""
+    },
+    "timestamp": [
+     1790568000,
+     1790654400,
+     1790740800,
+     1790827200,
+     1790913600
+    ],
+    "indicators": {
+     "quote": [
+      {
+       "open": [
+        71.54,
+        71.8,
+        null,
+        72.65,
+        72.72
+       ],
+       "high": [
+        72.44,
+        72.69999999999999,
+        null,
+        73.55,
+        73.61999999999999
+       ],
+       "low": [
+        71.14,
+        71.39999999999999,
+        null,
+        72.25,
+        72.32
+       ],
+       "close": [
+        71.84,
+        72.1,
+        null,
+        72.95,
+        73.02
+       ],
+       "volume": [
+        1200,
+        1200,
+        null,
+        1200,
+        1200
+       ]
+      }
+     ],
+     "adjclose": [
+      {
+       "adjclose": [
+        71.84,
+        72.1,
+        null,
+        72.95,
+        73.02
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "error": null
+ }
+}

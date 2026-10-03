@@ -1,0 +1,12 @@
+[Unit]
+Description=oil-dash: EIA futures curve schedule
+
+[Timer]
+# After the NYMEX settle (14:30 ET) and EIA's daily update
+OnCalendar=Mon..Fri 19:00 America/New_York
+# Run on boot if the Pi was off at a scheduled time
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

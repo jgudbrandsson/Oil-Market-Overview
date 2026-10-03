@@ -1,0 +1,15 @@
+[Unit]
+Description=oil-dash: dashboard web server (read-only)
+After=network.target
+
+[Service]
+User=oildash
+WorkingDirectory=/opt/oil-dash
+Environment=OIL_DASH_DB=/var/lib/oil-dash/oil.db
+# Localhost only; expose on the tailnet with `tailscale serve` (see README)
+ExecStart=/opt/oil-dash/.venv/bin/python -m oildash serve --host 127.0.0.1 --port 8710
+Restart=on-failure
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
