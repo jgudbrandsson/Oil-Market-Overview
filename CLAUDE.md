@@ -33,3 +33,7 @@ Tests pass, the change fits C1–C6, and `DESIGN.md` is updated if the schema, s
 ## When reviewing or critiquing
 
 Check the change against C1–C6 and ask what breaks (power loss, a source being down, a format change). Don't suggest features.
+
+## Tracking
+
+Work is tracked in GitHub issues (#2–#6, one per build step). One issue per session; the PR says `Closes #N`. Tick the issue's checklist as tasks land. Don't create new issues without asking.
