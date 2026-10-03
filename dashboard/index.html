@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>oil-dash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: control-room board, panels in DESIGN.md §6 order. Visual reference: docs/mockup.html.
+   Fonts load from Google; without internet the system fallbacks are used. */
+:root {
+  --bg: #eef0ee;
+  --panel: #fcfcfb;
+  --line: #dcdfdb;
+  --grid: #e9ebe8;
+  --fg: #0b0b0b;
+  --fg2: #52514e;
+  --fg3: #74736e;
+  --accent: #1d6a84;
+  --accent-soft: #dcebf0;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --band: #8a8f8a;
+  --band-a: .18;
+  --good: #0ca30c;
+  --warn: #fab219;
+  --crit: #d03b3b;
+  --mock: #fff4d6;
+  --mock-fg: #5c4500;
+  --font-d: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-b: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-m: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111211; --panel: #1a1a19; --line: #2e2f2c; --grid: #262724;
+    --fg: #ffffff; --fg2: #c3c2b7; --fg3: #95948b;
+    --accent: #6db8d3; --accent-soft: #1d3540;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+    --band: #b4b8b2; --band-a: .14;
+    --mock: #3a3010; --mock-fg: #f3dc96;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111211; --panel: #1a1a19; --line: #2e2f2c; --grid: #262724;
+  --fg: #ffffff; --fg2: #c3c2b7; --fg3: #95948b;
+  --accent: #6db8d3; --accent-soft: #1d3540;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --band: #b4b8b2; --band-a: .14;
+  --mock: #3a3010; --mock-fg: #f3dc96;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-b); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; display: grid; gap: 16px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand h1 { font-family: var(--font-d); font-weight: 600; font-size: 26px; letter-spacing: .01em; margin: 0; }
+.brand .sub { color: var(--fg2); }
+.meta { color: var(--fg3); font-family: var(--font-m); font-size: 12px; }
+.mockbar { background: var(--mock); color: var(--mock-fg); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
+.mockbar strong { font-weight: 600; }
+
+/* Panels */
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+.panel { grid-column: span 12; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 12px; min-width: 0; align-content: start; }
+.panel.half { grid-column: span 6; }
+@media (max-width: 860px) { .panel.half { grid-column: span 12; } }
+.ph { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.ph h3 { font-family: var(--font-d); font-weight: 600; font-size: 17px; margin: 0; }
+.ph h3 small { font-family: var(--font-b); font-weight: 400; font-size: 13px; color: var(--fg3); margin-left: 6px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--fg2); font-family: var(--font-m); }
+.badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+.badge.stale .dot { background: var(--warn); }
+.badge.stale { color: var(--fg); }
+.question { margin: 0; color: var(--fg2); font-size: 13px; max-width: 80ch; }
+.stale-note { overflow-wrap: anywhere; border-left: 3px solid var(--warn); padding: 6px 10px; font-size: 12.5px; color: var(--fg2); background: var(--bg); border-radius: 0 4px 4px 0; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.tile { padding: 8px 0; border-top: 1px solid var(--line); display: grid; gap: 2px; }
+.tile .k { font-size: 12px; color: var(--fg2); }
+.tile .v { font-family: var(--font-m); font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.tile .v small { font-size: 12px; color: var(--fg3); font-weight: 400; margin-left: 2px; }
+.tile .c { font-family: var(--font-m); font-size: 12px; color: var(--fg2); font-variant-numeric: tabular-nums; }
+
+.multi { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.multi.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 640px) { .multi.two { grid-template-columns: 1fr; } }
+.chartbox { display: grid; gap: 4px; min-width: 0; }
+.chartbox h4 { margin: 0; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.chartbox h4 span { font-family: var(--font-m); font-weight: 400; color: var(--fg2); font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--fg2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
+.legend i.band { height: 10px; border-radius: 2px; opacity: var(--band-a); background: var(--band); }
+.legend i.avg { background: var(--fg3); }
+
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--fg3); font-family: var(--font-m); font-size: 10.5px; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; z-index: 2; }
+.tip .t { color: var(--fg3); font-family: var(--font-m); font-size: 11px; margin-bottom: 2px; }
+.tip .r { display: flex; align-items: center; gap: 6px; color: var(--fg2); }
+.tip .r b { font-family: var(--font-m); font-weight: 500; color: var(--fg); margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
+.tip .sw { width: 8px; height: 8px; border-radius: 2px; }
+
+details.data summary { cursor: pointer; color: var(--accent); font-size: 12.5px; width: fit-content; }
+details.data summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tablewrap { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; font-size: 12.5px; min-width: 100%; }
+th, td { text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 500; color: var(--fg2); }
+td { font-family: var(--font-m); }
+
+footer { color: var(--fg3); font-size: 12px; display: grid; gap: 4px; }
+footer p { margin: 0; max-width: 100ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>oil-dash</h1>
+      <span class="sub">Oil market, drilling to pump</span>
+    </div>
+    <div class="meta" id="asof">Loading…</div>
+  </header>
+
+  <div class="mockbar" id="notice" hidden></div>
+
+  <div class="grid" id="board" hidden>
+    <section class="panel" aria-labelledby="p-price">
+      <div class="ph">
+        <h3 id="p-price">Price<small>the output</small></h3>
+        <span class="badge" id="b-price"><span class="dot"></span><span></span></span>
+      </div>
+      <div class="stale-note" id="n-price" hidden></div>
+      <div class="tiles" id="price-tiles"></div>
+      <div class="multi two">
+        <div class="chartbox" style="grid-column: 1 / -1">
+          <h4>WTI and Brent spot <span>$/bbl · 12 months</span></h4>
+          <div class="legend"><span><i style="background:var(--s1)"></i>WTI Cushing</span><span><i style="background:var(--s2)"></i>Brent</span></div>
+          <div class="chart" id="c-price"></div>
+        </div>
+        <div class="chartbox">
+          <h4>Brent − WTI <span>$/bbl</span></h4>
+          <div class="chart" id="c-spread"></div>
+        </div>
+        <div class="chartbox">
+          <h4>3-2-1 crack spread <span>$/bbl · refinery margin</span></h4>
+          <div class="chart" id="c-crack"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="p-inv">
+      <div class="ph">
+        <h3 id="p-inv">Inventories<small>the buffer</small></h3>
+        <span class="badge" id="b-inventories"><span class="dot"></span><span></span></span>
+      </div>
+      <div class="stale-note" id="n-inventories" hidden></div>
+      <p class="question">US weekly stocks, last 12 months. The 5-year band comes in a later step (#5).</p>
+      <div class="multi" id="inv"></div>
+      <details class="data">
+        <summary>Show latest values as a table</summary>
+        <div class="tablewrap"><table id="inv-table"></table></div>
+      </details>
+    </section>
+  </div>
+
+  <footer>
+    <p>Data: EIA spot prices and Weekly Petroleum Status Report. Gasoline is NY Harbor conventional regular, the free daily stand-in for RBOB.</p>
+    <p>Each panel's badge compares its newest data point with how often the source publishes. A failed fetch turns only that panel's badge amber.</p>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmtDate = d => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(2)}`;
+
+  // ---------- chart ----------
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+
+  function niceTicks(lo, hi, count) {
+    const raw = (hi - lo) / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => s >= raw);
+    const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6));
+    return out;
+  }
+
+  function chart(host, o) {
+    const H = o.height || 180, M = { l: 44, r: 12, t: 8, b: 22 };
+    const n = o.x.length;
+    const all = o.series.flatMap(s => s.values).concat(o.band ? o.band.lo.concat(o.band.hi) : []).concat(o.zero ? [0] : []);
+    let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * .08 || 1; lo -= pad; hi += pad;
+    const yt = niceTicks(lo, hi, 4); lo = Math.min(lo, yt[0]); hi = Math.max(hi, yt.at(-1));
+    const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true;
+
+    function draw() {
+      const W = Math.max(host.clientWidth, 200), iw = W - M.l - M.r, ih = H - M.t - M.b;
+      const X = i => M.l + (n === 1 ? iw / 2 : i / (n - 1) * iw), Y = v => M.t + (hi - v) / (hi - lo) * ih;
+      host.innerHTML = '';
+      const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, height: H, role: 'img', 'aria-label': o.label }, host);
+      host.appendChild(tip);
+
+      yt.forEach(v => {
+        el('line', { x1: M.l, x2: W - M.r, y1: Y(v), y2: Y(v), stroke: 'var(--grid)', 'stroke-width': 1 }, svg);
+        el('text', { x: M.l - 6, y: Y(v) + 3.5, 'text-anchor': 'end' }, svg).textContent = o.yfmt ? o.yfmt(v) : v;
+      });
+      if (o.zero && lo < 0 && hi > 0) el('line', { x1: M.l, x2: W - M.r, y1: Y(0), y2: Y(0), stroke: 'var(--fg3)', 'stroke-width': 1 }, svg);
+
+      // x ticks: month starts for dates, every label for categories; thinned by spacing
+      const isDate = o.x[0] instanceof Date;
+      const cand = isDate ? o.x.map((d, i) => i).filter(i => i > 0 && o.x[i].getUTCMonth() !== o.x[i - 1].getUTCMonth()) : o.x.map((_, i) => i);
+      const gap = isDate ? 64 : 26; let last = -1e9;
+      cand.forEach(i => {
+        if (X(i) - last < gap || (isDate && X(i) > W - M.r - 10)) return; last = X(i);
+        const lab = isDate ? MON[o.x[i].getUTCMonth()] + (o.x[i].getUTCMonth() === 0 ? ' ' + String(o.x[i].getUTCFullYear()).slice(2) : '') : o.x[i];
+        el('text', { x: X(i), y: H - 6, 'text-anchor': 'middle' }, svg).textContent = lab;
+      });
+
+      if (o.band) {
+        const top = o.band.hi.map((v, i) => `${X(i)},${Y(v)}`), bot = o.band.lo.map((v, i) => `${X(i)},${Y(v)}`).reverse();
+        el('polygon', { points: top.concat(bot).join(' '), fill: 'var(--band)', 'fill-opacity': 'var(--band-a)', style: 'fill-opacity:var(--band-a)' }, svg);
+        el('polyline', { points: o.band.avg.map((v, i) => `${X(i)},${Y(v)}`).join(' '), fill: 'none', stroke: 'var(--fg3)', 'stroke-width': 1.25 }, svg);
+      }
+      o.series.forEach(s => {
+        const pts = s.values.map((v, i) => `${X(i)},${Y(v)}`);
+        if (s.area) {
+          const base = Y(Math.max(lo, Math.min(hi, 0)));
+          el('polygon', { points: `${X(0)},${base} ${pts.join(' ')} ${X(n - 1)},${base}`, fill: s.color, 'fill-opacity': .1 }, svg);
+        }
+        el('polyline', { points: pts.join(' '), fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+        if (o.markers) s.values.forEach((v, i) => el('circle', { cx: X(i), cy: Y(v), r: 3, fill: s.color, stroke: 'var(--panel)', 'stroke-width': 1.5 }, svg));
+      });
+      // emphasise the latest point of the first series
+      const s0 = o.series[0];
+      el('circle', { cx: X(n - 1), cy: Y(s0.values[n - 1]), r: 4, fill: s0.color, stroke: 'var(--panel)', 'stroke-width': 2 }, svg);
+
+      // hover layer
+      const cross = el('line', { y1: M.t, y2: M.t + ih, stroke: 'var(--fg3)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+      const dots = o.series.map(s => el('circle', { r: 4.5, fill: s.color, stroke: 'var(--panel)', 'stroke-width': 2, visibility: 'hidden' }, svg));
+      const hit = el('rect', { x: M.l, y: 0, width: iw, height: H, fill: 'transparent' }, svg);
+      const hide = () => { cross.setAttribute('visibility', 'hidden'); dots.forEach(d => d.setAttribute('visibility', 'hidden')); tip.hidden = true; };
+      hit.addEventListener('pointermove', e => {
+        const rect = svg.getBoundingClientRect(), px = (e.clientX - rect.left) * (W / rect.width);
+        const i = Math.max(0, Math.min(n - 1, Math.round((px - M.l) / iw * (n - 1))));
+        cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.setAttribute('visibility', 'visible');
+        o.series.forEach((s, k) => { dots[k].setAttribute('cx', X(i)); dots[k].setAttribute('cy', Y(s.values[i])); dots[k].setAttribute('visibility', 'visible'); });
+        const head = isDate ? fmtDate(o.x[i]) : o.x[i];
+        const rows = o.series.map(s => `<div class="r"><span class="sw" style="background:${s.color}"></span>${s.name}<b>${o.tfmt(s.values[i])}</b></div>`);
+        if (o.band) rows.push(`<div class="r"><span class="sw" style="background:var(--fg3)"></span>5-yr avg<b>${o.tfmt(o.band.avg[i])}</b></div>`,
+                               `<div class="r"><span class="sw" style="background:var(--band);opacity:.5"></span>5-yr range<b>${o.tfmt(o.band.lo[i])}–${o.tfmt(o.band.hi[i])}</b></div>`);
+        tip.innerHTML = `<div class="t">${head}</div>${rows.join('')}`; tip.hidden = false;
+        const sx = X(i) * rect.width / W, tw = tip.offsetWidth;
+        tip.style.left = Math.max(0, Math.min(rect.width - tw, sx + 12 + tw > rect.width ? sx - tw - 12 : sx + 12)) + 'px';
+        tip.style.top = '4px';
+      });
+      hit.addEventListener('pointerleave', hide);
+    }
+    draw();
+    let w = host.clientWidth;
+    new ResizeObserver(() => { if (host.clientWidth !== w) { w = host.clientWidth; draw(); } }).observe(host);
+  }
+
+
+  // ---------- board ----------
+  const $ = id => document.getElementById(id);
+  const toDate = s => new Date(s + 'T00:00:00Z');
+  const f1 = v => v.toFixed(1), f2 = v => v.toFixed(2);
+  const sf = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toFixed(d);
+  const usd = v => '$' + f2(v);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const nice = iso => { const d = toDate(iso); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
+  const STOCKS = [
+    ['crude_stocks_ex_spr', 'Commercial crude ex-SPR'],
+    ['cushing_stocks', 'Cushing, OK'],
+    ['gasoline_stocks', 'Total gasoline'],
+    ['distillate_stocks', 'Distillate'],
+  ];
+
+  function tiles(id, items) {
+    $(id).innerHTML = items.map(t => `<div class="tile"><span class="k">${t.k}</span><span class="v">${t.v}<small>${t.u || ''}</small></span><span class="c">${t.c || '&nbsp;'}</span></div>`).join('');
+  }
+  function weekAgo(rows, col) { return rows.length > 5 ? rows.at(-1)[col] - rows.at(-6)[col] : null; }
+  function empty(host, msg) { host.innerHTML = `<p class="question">${msg}</p>`; }
+
+  function badge(name, info) {
+    const b = $('b-' + name), n = $('n-' + name);
+    b.classList.toggle('stale', info.status === 'stale');
+    b.lastElementChild.textContent = info.status === 'stale'
+      ? `Stale${info.through ? ' · data to ' + nice(info.through) : ' · no data yet'}`
+      : `Fresh · data to ${nice(info.through)}`;
+    const lines = [];
+    if (info.stale_series.length) lines.push(`Out of date: ${info.stale_series.join(', ')}.`);
+    const when = at => { const d = new Date(at); return `${nice(at.slice(0, 10))} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC`; };
+    info.errors.forEach(e => lines.push(`Last ${e.source.toUpperCase()} fetch failed${e.at ? ' (' + when(e.at) + ')' : ''}: ${e.error}`));
+    n.hidden = !lines.length;
+    n.innerHTML = lines.map(esc).join('<br>');
+  }
+
+  function render(b) {
+    $('asof').textContent = `Board as of ${nice(b.today)} ${b.today.slice(0, 4)} · served from the Pi`;
+    for (const [name, info] of Object.entries(b.panels)) badge(name, info);
+
+    const spot = b.price.spot, crack = b.price.crack;
+    const last = (rows, col) => rows.length ? rows.at(-1)[col] : null;
+    const wk = (rows, col) => { const d = weekAgo(rows, col); return d === null ? '' : `${sf(d)} 1 wk`; };
+    tiles('price-tiles', [
+      { k: 'WTI Cushing', v: spot.length ? f2(last(spot, 1)) : '–', u: ' $/bbl', c: wk(spot, 1) },
+      { k: 'Brent', v: spot.length ? f2(last(spot, 2)) : '–', u: ' $/bbl', c: wk(spot, 2) },
+      { k: 'Brent − WTI', v: spot.length ? f2(last(spot, 3)) : '–', u: ' $/bbl', c: wk(spot, 3) },
+      { k: '3-2-1 crack', v: crack.length ? f2(last(crack, 1)) : '–', u: ' $/bbl', c: wk(crack, 1) },
+    ]);
+    if (spot.length > 1) {
+      const x = spot.map(r => toDate(r[0]));
+      chart($('c-price'), { label: 'WTI and Brent spot price', x, height: 220, tfmt: usd,
+        series: [{ name: 'WTI', color: 'var(--s1)', values: spot.map(r => r[1]) }, { name: 'Brent', color: 'var(--s2)', values: spot.map(r => r[2]) }] });
+      chart($('c-spread'), { label: 'Brent minus WTI spread', x, height: 150, tfmt: usd,
+        series: [{ name: 'Brent − WTI', color: 'var(--s1)', values: spot.map(r => r[3]) }] });
+    } else { empty($('c-price'), 'No spot prices yet.'); empty($('c-spread'), 'No spot prices yet.'); }
+    if (crack.length > 1) {
+      chart($('c-crack'), { label: '3-2-1 crack spread', x: crack.map(r => toDate(r[0])), height: 150, tfmt: usd,
+        series: [{ name: '3-2-1 crack', color: 'var(--s1)', values: crack.map(r => r[1]) }] });
+    } else empty($('c-crack'), 'No product prices yet.');
+
+    $('inv').innerHTML = STOCKS.map(([key, name]) => {
+      const rows = b.inventories[key] || [];
+      const head = rows.length ? `${f1(rows.at(-1)[1])} mb${rows.length > 1 ? ' · ' + sf(rows.at(-1)[1] - rows.at(-2)[1], 1) + ' wk' : ''}` : 'no data';
+      return `<div class="chartbox"><h4>${name}<span>${head}</span></h4><div class="chart" id="c-${key}"></div></div>`;
+    }).join('');
+    STOCKS.forEach(([key, name]) => {
+      const rows = b.inventories[key] || [];
+      if (rows.length > 1) chart($('c-' + key), { label: `${name} stocks, weekly`, x: rows.map(r => toDate(r[0])), height: 160, tfmt: v => f1(v) + ' mb',
+        series: [{ name: 'Stocks', color: 'var(--s1)', values: rows.map(r => r[1]) }] });
+      else empty($('c-' + key), 'No data yet.');
+    });
+    $('inv-table').innerHTML = '<thead><tr><th>Series</th><th>Week to</th><th>Stocks (mb)</th><th>1-wk change</th><th>vs 1 yr ago</th></tr></thead><tbody>' +
+      STOCKS.map(([key, name]) => {
+        const r = b.inventories[key] || [];
+        if (!r.length) return `<tr><td>${name}</td><td colspan="4">no data</td></tr>`;
+        const yr = r.length > 52 ? sf(r.at(-1)[1] - r.at(-53)[1], 1) : '–';
+        return `<tr><td>${name}</td><td>${nice(r.at(-1)[0])}</td><td>${f1(r.at(-1)[1])}</td><td>${r.length > 1 ? sf(r.at(-1)[1] - r.at(-2)[1], 1) : '–'}</td><td>${yr}</td></tr>`;
+      }).join('') + '</tbody>';
+    $('board').hidden = false;
+  }
+
+  fetch('api/board', { cache: 'no-store' })
+    .then(async r => { const body = await r.json(); if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`); return body; })
+    .then(render)
+    .catch(e => { $('asof').textContent = ''; const n = $('notice'); n.hidden = false; n.innerHTML = `<strong>Board unavailable.</strong> ${esc(e.message)}`; });
+})();
+</script>
+</body>
+</html>

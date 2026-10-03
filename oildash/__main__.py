@@ -2,6 +2,7 @@
 
     python -m oildash init-db
     python -m oildash fetch eia [--days 30 | --start 2000-01-01]
+    python -m oildash serve [--host 127.0.0.1] [--port 8710]
 """
 
 import argparse
@@ -9,7 +10,7 @@ import os
 import sys
 from datetime import date, timedelta
 
-from . import config, db
+from . import config, db, web
 from .fetchers import eia
 
 
@@ -22,9 +23,16 @@ def main(argv: list[str] | None = None) -> int:
     window = fetch.add_mutually_exclusive_group()
     window.add_argument("--days", type=int, default=30, help="trailing window (default 30)")
     window.add_argument("--start", help="fetch from this date, e.g. 2000-01-01 to backfill")
+    serve = sub.add_parser("serve", help="serve the dashboard (read-only)")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8710)
     args = parser.parse_args(argv)
 
     cfg = config.load()
+    if args.command == "serve":
+        web.serve(cfg.db_path, args.host, args.port)
+        return 0
+
     conn = db.connect(cfg.db_path)
     # Cheap and idempotent: keeps tables, views and `series` in step with config.toml.
     db.init_db(conn, cfg.series)

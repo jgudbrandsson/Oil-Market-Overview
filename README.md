@@ -30,9 +30,23 @@ sudo -u oildash env $(sudo cat /etc/oil-dash/env) OIL_DASH_DB=/var/lib/oil-dash/
 journalctl -u oil-fetch-eia -n 20   # look for failed series ids
 ```
 
+Dashboard:
+
+```sh
+sudo cp systemd/oil-dash-web.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now oil-dash-web
+# Reachable only from your tailnet, over HTTPS, at https://<pi-name>.<tailnet>.ts.net/
+sudo tailscale serve --bg 8710
+```
+
+The server binds to localhost and only reads the database. If the health
+pipeline already uses `tailscale serve` on `/`, add `--set-path=/oil` instead.
+
 ## Develop
 
 ```sh
 pip install -e '.[dev]'
 pytest && ruff check .
+OIL_DASH_DB=./dev.db python -m oildash serve   # http://127.0.0.1:8710
 ```

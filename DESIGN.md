@@ -71,7 +71,7 @@ systemd timer ──► oildash/fetchers/<source>.py ──► observations / cu
 
 ### Dashboard layer — decision
 
-**Recommendation: Grafana + SQLite datasource plugin for v1.** Every panel is a time series or a curve; Grafana does that out of the box, and you only write fetchers + SQL views. Hand-rolling (FastAPI + Plotly/uPlot) is the fallback if Grafana's RAM footprint (~150–250 MB) on the Pi competes with the health pipeline, or if the seasonal-band panel proves awkward. Because transforms live in SQL views, switching later costs only the presentation layer.
+**Decided: hand-rolled** (see #7). A standard-library Python server (`python -m oildash serve`) serves one HTML page and one JSON route, `/api/board`, read from the views over a read-only connection. No framework and no extra packages. Reasons: the layout (signal strip, stale notes, 5-year band) doesn't fit Grafana well; the layout lives in git where agents can work on it; about 40 MB of memory instead of about 200 MB. Visual reference: `docs/mockup.html`.
 
 ## 4. Schema
 
@@ -181,10 +181,11 @@ One service + timer pair per source (C6). Every fetch first syncs tables, views 
 
 ```
 oil-dash/
-├── oildash/         # python -m oildash {init-db, fetch <source>}
+├── oildash/         # python -m oildash {init-db, fetch <source>, serve}; web.py serves the board
 │   └── fetchers/    # eia.py, then cftc.py, bakerhughes.py, yahoo.py, …
 ├── db/              # schema.sql, views.sql
-├── dashboard/       # grafana provisioning (datasource + dashboard JSON)
+├── dashboard/       # index.html: the board, fed by /api/board
+├── docs/            # mockup.html: visual reference with sample data
 ├── systemd/         # *.service, *.timer — versioned
 ├── config.toml      # series list, paths; API keys via env/EnvironmentFile
 └── tests/           # fetcher parsing against saved fixtures
@@ -202,6 +203,5 @@ Each step is usable on its own; stop at any point.
 
 ## Open decisions (yours)
 
-- Grafana vs hand-rolled dashboard (recommendation: Grafana, §3).
 - Backup target: NAS, USB disk, or a private GitHub repo/release for the curve table only.
 - Which product curves to snapshot beyond CL: BZ, RB, HO cost nothing extra in storage, but each Yahoo root is another thing to break.
