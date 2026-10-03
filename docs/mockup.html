@@ -1,0 +1,467 @@
+<title>Oil Dash Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: control-room board. Signal strip first (the verdict), then panels in DESIGN.md §6 order:
+   price → urgency (curve) → buffer (inventories) → future supply → positioning. */
+:root {
+  --bg: #eef0ee;
+  --panel: #fcfcfb;
+  --line: #dcdfdb;
+  --grid: #e9ebe8;
+  --fg: #0b0b0b;
+  --fg2: #52514e;
+  --fg3: #74736e;
+  --accent: #1d6a84;
+  --accent-soft: #dcebf0;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --band: #8a8f8a;
+  --band-a: .18;
+  --good: #0ca30c;
+  --warn: #fab219;
+  --crit: #d03b3b;
+  --mock: #fff4d6;
+  --mock-fg: #5c4500;
+  --font-d: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-b: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-m: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111211; --panel: #1a1a19; --line: #2e2f2c; --grid: #262724;
+    --fg: #ffffff; --fg2: #c3c2b7; --fg3: #95948b;
+    --accent: #6db8d3; --accent-soft: #1d3540;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+    --band: #b4b8b2; --band-a: .14;
+    --mock: #3a3010; --mock-fg: #f3dc96;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111211; --panel: #1a1a19; --line: #2e2f2c; --grid: #262724;
+  --fg: #ffffff; --fg2: #c3c2b7; --fg3: #95948b;
+  --accent: #6db8d3; --accent-soft: #1d3540;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --band: #b4b8b2; --band-a: .14;
+  --mock: #3a3010; --mock-fg: #f3dc96;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-b); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; display: grid; gap: 16px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand h1 { font-family: var(--font-d); font-weight: 600; font-size: 26px; letter-spacing: .01em; margin: 0; }
+.brand .sub { color: var(--fg2); }
+.meta { color: var(--fg3); font-family: var(--font-m); font-size: 12px; }
+.mockbar { background: var(--mock); color: var(--mock-fg); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
+.mockbar strong { font-weight: 600; }
+
+/* Signal strip */
+.signals { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 14px; }
+.verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.verdict h2 { font-family: var(--font-d); font-weight: 600; font-size: 20px; margin: 0; text-wrap: balance; }
+.meter { display: flex; gap: 4px; }
+.meter i { width: 14px; height: 14px; border-radius: 3px; background: var(--grid); border: 1px solid var(--line); }
+.meter i.on { background: var(--accent); border-color: var(--accent); }
+.verdict p { margin: 0; color: var(--fg2); flex-basis: 100%; max-width: 72ch; }
+.sig-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.sig { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.sig .k { font-family: var(--font-d); text-transform: uppercase; letter-spacing: .06em; font-size: 11.5px; color: var(--fg3); }
+.sig .v { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.sig .d { color: var(--fg2); font-size: 12.5px; }
+.lean { font-family: var(--font-m); font-size: 11px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); color: var(--fg2); }
+.lean.tight { background: var(--accent-soft); border-color: transparent; color: var(--fg); }
+
+/* Panels */
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+.panel { grid-column: span 12; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 12px; min-width: 0; align-content: start; }
+.panel.half { grid-column: span 6; }
+@media (max-width: 860px) { .panel.half { grid-column: span 12; } }
+.ph { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.ph h3 { font-family: var(--font-d); font-weight: 600; font-size: 17px; margin: 0; }
+.ph h3 small { font-family: var(--font-b); font-weight: 400; font-size: 13px; color: var(--fg3); margin-left: 6px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--fg2); font-family: var(--font-m); }
+.badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+.badge.stale .dot { background: var(--warn); }
+.badge.stale { color: var(--fg); }
+.question { margin: 0; color: var(--fg2); font-size: 13px; max-width: 80ch; }
+.stale-note { border-left: 3px solid var(--warn); padding: 6px 10px; font-size: 12.5px; color: var(--fg2); background: var(--bg); border-radius: 0 4px 4px 0; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.tile { padding: 8px 0; border-top: 1px solid var(--line); display: grid; gap: 2px; }
+.tile .k { font-size: 12px; color: var(--fg2); }
+.tile .v { font-family: var(--font-m); font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.tile .v small { font-size: 12px; color: var(--fg3); font-weight: 400; margin-left: 2px; }
+.tile .c { font-family: var(--font-m); font-size: 12px; color: var(--fg2); font-variant-numeric: tabular-nums; }
+
+.multi { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.multi.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 640px) { .multi.two { grid-template-columns: 1fr; } }
+.chartbox { display: grid; gap: 4px; min-width: 0; }
+.chartbox h4 { margin: 0; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.chartbox h4 span { font-family: var(--font-m); font-weight: 400; color: var(--fg2); font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--fg2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
+.legend i.band { height: 10px; border-radius: 2px; opacity: var(--band-a); background: var(--band); }
+.legend i.avg { background: var(--fg3); }
+
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--fg3); font-family: var(--font-m); font-size: 10.5px; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; z-index: 2; }
+.tip .t { color: var(--fg3); font-family: var(--font-m); font-size: 11px; margin-bottom: 2px; }
+.tip .r { display: flex; align-items: center; gap: 6px; color: var(--fg2); }
+.tip .r b { font-family: var(--font-m); font-weight: 500; color: var(--fg); margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
+.tip .sw { width: 8px; height: 8px; border-radius: 2px; }
+
+details.data summary { cursor: pointer; color: var(--accent); font-size: 12.5px; width: fit-content; }
+details.data summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tablewrap { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; font-size: 12.5px; min-width: 100%; }
+th, td { text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 500; color: var(--fg2); }
+td { font-family: var(--font-m); }
+
+footer { color: var(--fg3); font-size: 12px; display: grid; gap: 4px; }
+footer p { margin: 0; max-width: 100ch; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>oil-dash</h1>
+      <span class="sub">Oil market, drilling to pump</span>
+    </div>
+    <div class="meta">Board as of Sat 3 Oct 2026 · served from the Pi over Tailscale</div>
+  </header>
+
+  <div class="mockbar"><strong>Mockup.</strong> Every number on this page is generated sample data, shaped to look plausible. It shows layout and behaviour only. Nothing here is a market reading.</div>
+
+  <section class="signals" aria-labelledby="verdict-h">
+    <div class="verdict">
+      <h2 id="verdict-h">4 of 5 signals point tight</h2>
+      <div class="meter" id="meter" aria-hidden="true"></div>
+      <p>When the curve, inventories, supply and positioning agree, a price move is fundamental. Here the curve is backwardated and crude stocks sit below the 5-year band, so the rally has support. Positioning is neutral, so it isn't froth either.</p>
+    </div>
+    <div class="sig-grid" id="sigs"></div>
+  </section>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="p-price">
+      <div class="ph">
+        <h3 id="p-price">Price<small>the output</small></h3>
+        <span class="badge"><span class="dot"></span>Fresh · EIA spot to Thu 1 Oct</span>
+      </div>
+      <div class="tiles" id="price-tiles"></div>
+      <div class="multi two">
+        <div class="chartbox" style="grid-column: 1 / -1">
+          <h4>WTI and Brent spot <span>$/bbl · 12 months</span></h4>
+          <div class="legend"><span><i style="background:var(--s1)"></i>WTI Cushing</span><span><i style="background:var(--s2)"></i>Brent</span></div>
+          <div class="chart" id="c-price"></div>
+        </div>
+        <div class="chartbox">
+          <h4>Brent − WTI <span>$/bbl</span></h4>
+          <div class="chart" id="c-spread"></div>
+        </div>
+        <div class="chartbox">
+          <h4>3-2-1 crack spread <span>$/bbl · refinery margin</span></h4>
+          <div class="chart" id="c-crack"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel half" aria-labelledby="p-curve">
+      <div class="ph">
+        <h3 id="p-curve">Futures curve<small>urgency</small></h3>
+        <span class="badge"><span class="dot"></span>Fresh · settle Fri 2 Oct</span>
+      </div>
+      <p class="question">Is the market paying up for barrels now? A curve sloping down to the right (backwardation) says yes.</p>
+      <div class="tiles" id="curve-tiles"></div>
+      <div class="chartbox">
+        <h4>WTI by delivery month <span>$/bbl</span></h4>
+        <div class="legend"><span><i style="background:var(--s1)"></i>Today</span><span><i style="background:var(--s2)"></i>1 month ago</span><span><i style="background:var(--s3)"></i>1 year ago</span></div>
+        <div class="chart" id="c-curve"></div>
+      </div>
+    </section>
+
+    <section class="panel half" aria-labelledby="p-pos">
+      <div class="ph">
+        <h3 id="p-pos">Positioning<small>how much is speculation</small></h3>
+        <span class="badge"><span class="dot"></span>Fresh · COT for Tue 29 Sep</span>
+      </div>
+      <p class="question">Managed money net long as a share of open interest. Extremes in either direction mean the move is crowded.</p>
+      <div class="tiles" id="pos-tiles"></div>
+      <div class="chartbox">
+        <h4>Managed money net, WTI <span>% of open interest</span></h4>
+        <div class="chart" id="c-pos"></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="p-inv">
+      <div class="ph">
+        <h3 id="p-inv">Inventories<small>the buffer</small></h3>
+        <span class="badge"><span class="dot"></span>Fresh · EIA week to 26 Sep</span>
+      </div>
+      <p class="question">Distance from the 5-year band matters, not the level. Below the band means a thin buffer.</p>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Last 52 weeks</span><span><i class="avg"></i>5-year average</span><span><i class="band"></i>5-year range</span></div>
+      <div class="multi" id="inv"></div>
+      <details class="data">
+        <summary>Show latest values as a table</summary>
+        <div class="tablewrap"><table id="inv-table"></table></div>
+      </details>
+    </section>
+
+    <section class="panel" aria-labelledby="p-sup">
+      <div class="ph">
+        <h3 id="p-sup">Future supply<small>6–12 months out</small></h3>
+        <span class="badge stale"><span class="dot"></span>Stale · rig count last 19 Sep</span>
+      </div>
+      <div class="stale-note">Rig count is 14 days old. Friday's Baker Hughes fetch failed: the download URL returned a different file layout. Other panels are unaffected.</div>
+      <div class="tiles" id="sup-tiles"></div>
+      <div class="multi two">
+        <div class="chartbox">
+          <h4>US oil rigs <span>count · weekly</span></h4>
+          <div class="chart" id="c-rigs"></div>
+        </div>
+        <div class="chartbox">
+          <h4>US crude production <span>million b/d · weekly</span></h4>
+          <div class="chart" id="c-prod"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p>Sources when built: EIA (spot, futures M1–M4, weekly stocks, production), Yahoo Finance (curve M5–M12), CFTC Commitments of Traders, Baker Hughes rig count. See DESIGN.md §2.</p>
+    <p>Each panel's badge compares its newest data point with how often the source publishes. A failed fetch turns only that panel's badge amber.</p>
+  </footer>
+</div>
+
+<script>
+(() => {
+  // ---------- sample data (seeded so the mockup is stable) ----------
+  let seed = 20261003;
+  const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const noise = (a) => (rnd() - .5) * 2 * a;
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmtDate = d => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(2)}`;
+  const day = 86400000;
+
+  // trading days ending Thu 1 Oct 2026 (spot lags a day)
+  const days = []; for (let t = Date.UTC(2026, 9, 1); days.length < 252; t -= day) { const d = new Date(t); const w = d.getUTCDay(); if (w && w < 6) days.unshift(d); }
+  const weeks = (endUTC, n) => Array.from({ length: n }, (_, i) => new Date(endUTC - (n - 1 - i) * 7 * day));
+
+  // autocorrelated noise, so series wander like prices instead of buzzing
+  const ar = (n, amp, rho) => { let e = 0; return Array.from({ length: n }, () => (e = rho * e + noise(amp))); };
+  const N = days.length;
+  const target = i => i < 150 ? 68 - 7 * (i / 150) : 61 + 13 * ((i - 150) / (N - 151)) ** 1.3;
+  const wn = ar(N, .7, .9);
+  const wti = days.map((_, i) => +(target(i) + wn[i]).toFixed(2));
+  const sn = ar(N, .12, .9);
+  const brent = wti.map((v, i) => +(v + 3.7 - i * .0025 + sn[i]).toFixed(2));
+  const spread = brent.map((b, i) => +(b - wti[i]).toFixed(2));
+  const rn = ar(N, .012, .9), un = ar(N, .012, .9);
+  const rbob = wti.map((v, i) => v / 42 + .6 + i * .0003 + .08 * Math.sin(i / 40) + rn[i]);
+  const ulsd = wti.map((v, i) => v / 42 + .78 + un[i]);
+  const crack = wti.map((v, i) => +((2 * rbob[i] * 42 + ulsd[i] * 42 - 3 * v) / 3).toFixed(2));
+
+  const months = Array.from({ length: 12 }, (_, i) => 'M' + (i + 1));
+  const curveNow = months.map((_, i) => +(wti.at(-1) + .3 - i * .41 + i * i * .006).toFixed(2));
+  const curve1m = months.map((_, i) => +(wti.at(-22) + .1 - i * .14).toFixed(2));
+  const curve1y = months.map((_, i) => +(wti[0] - .2 + i * .27 - i * i * .004).toFixed(2));
+
+  const invWeeks = weeks(Date.UTC(2026, 8, 26), 52);
+  const season = (i, amp, phase) => amp * Math.sin(2 * Math.PI * (i + phase) / 52);
+  function inv(base, amp, phase, width, endDev) {
+    const avg = [], lo = [], hi = [], cur = [];
+    invWeeks.forEach((_, i) => {
+      const a = base + season(i, amp, phase);
+      avg.push(+a.toFixed(1));
+      lo.push(+(a - width * (1 + .2 * Math.sin(i / 7))).toFixed(1));
+      hi.push(+(a + width * (1 + .2 * Math.cos(i / 9))).toFixed(1));
+      const dev = (i / 51) * endDev;
+      cur.push(+(a * (1 + dev) + noise(width * .18)).toFixed(1));
+    });
+    return { avg, lo, hi, cur };
+  }
+  const stocks = [
+    { key: 'crude', name: 'Commercial crude ex-SPR', unit: 'mb', ...inv(438, 14, 8, 22, -.065) },
+    { key: 'cushing', name: 'Cushing, OK', unit: 'mb', ...inv(30, 4, 4, 6, -.21) },
+    { key: 'gasoline', name: 'Total gasoline', unit: 'mb', ...inv(228, 9, 38, 8, .006) },
+    { key: 'distillate', name: 'Distillate', unit: 'mb', ...inv(126, 7, 20, 9, -.07) },
+  ];
+
+  const rigWeeks = weeks(Date.UTC(2026, 8, 19), 52);
+  let r = 486; const rigs = rigWeeks.map((_, i) => { r += (i > 30 ? -.9 : -.15) + noise(2.2); return Math.round(r); });
+  let q = 13.38; const prod = invWeeks.map(() => { q += noise(.035) + .001; return +q.toFixed(2); });
+
+  const cotWeeks = weeks(Date.UTC(2026, 8, 29), 52);
+  let m = -3.1; const mmNet = cotWeeks.map((_, i) => { m += (i > 34 ? .45 : -.02) + noise(.9); return +m.toFixed(1); });
+
+  // ---------- helpers ----------
+  const $ = id => document.getElementById(id);
+  const sign = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v);
+  const f2 = v => v.toFixed(2), f1 = v => v.toFixed(1);
+  const sf = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toFixed(d);
+  const pct = (a, b) => (a / b - 1) * 100;
+
+  function tiles(id, items) {
+    $(id).innerHTML = items.map(t => `<div class="tile"><span class="k">${t.k}</span><span class="v">${t.v}<small>${t.u || ''}</small></span><span class="c">${t.c || '&nbsp;'}</span></div>`).join('');
+  }
+
+  // ---------- chart ----------
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+
+  function niceTicks(lo, hi, count) {
+    const raw = (hi - lo) / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => s >= raw);
+    const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6));
+    return out;
+  }
+
+  function chart(host, o) {
+    const H = o.height || 180, M = { l: 44, r: 12, t: 8, b: 22 };
+    const n = o.x.length;
+    const all = o.series.flatMap(s => s.values).concat(o.band ? o.band.lo.concat(o.band.hi) : []).concat(o.zero ? [0] : []);
+    let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * .08 || 1; lo -= pad; hi += pad;
+    const yt = niceTicks(lo, hi, 4); lo = Math.min(lo, yt[0]); hi = Math.max(hi, yt.at(-1));
+    const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true;
+
+    function draw() {
+      const W = Math.max(host.clientWidth, 200), iw = W - M.l - M.r, ih = H - M.t - M.b;
+      const X = i => M.l + (n === 1 ? iw / 2 : i / (n - 1) * iw), Y = v => M.t + (hi - v) / (hi - lo) * ih;
+      host.innerHTML = '';
+      const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, height: H, role: 'img', 'aria-label': o.label }, host);
+      host.appendChild(tip);
+
+      yt.forEach(v => {
+        el('line', { x1: M.l, x2: W - M.r, y1: Y(v), y2: Y(v), stroke: 'var(--grid)', 'stroke-width': 1 }, svg);
+        el('text', { x: M.l - 6, y: Y(v) + 3.5, 'text-anchor': 'end' }, svg).textContent = o.yfmt ? o.yfmt(v) : v;
+      });
+      if (o.zero && lo < 0 && hi > 0) el('line', { x1: M.l, x2: W - M.r, y1: Y(0), y2: Y(0), stroke: 'var(--fg3)', 'stroke-width': 1 }, svg);
+
+      // x ticks: month starts for dates, every label for categories; thinned by spacing
+      const isDate = o.x[0] instanceof Date;
+      const cand = isDate ? o.x.map((d, i) => i).filter(i => i > 0 && o.x[i].getUTCMonth() !== o.x[i - 1].getUTCMonth()) : o.x.map((_, i) => i);
+      const gap = isDate ? 64 : 26; let last = -1e9;
+      cand.forEach(i => {
+        if (X(i) - last < gap || (isDate && X(i) > W - M.r - 10)) return; last = X(i);
+        const lab = isDate ? MON[o.x[i].getUTCMonth()] + (o.x[i].getUTCMonth() === 0 ? ' ' + String(o.x[i].getUTCFullYear()).slice(2) : '') : o.x[i];
+        el('text', { x: X(i), y: H - 6, 'text-anchor': 'middle' }, svg).textContent = lab;
+      });
+
+      if (o.band) {
+        const top = o.band.hi.map((v, i) => `${X(i)},${Y(v)}`), bot = o.band.lo.map((v, i) => `${X(i)},${Y(v)}`).reverse();
+        el('polygon', { points: top.concat(bot).join(' '), fill: 'var(--band)', 'fill-opacity': 'var(--band-a)', style: 'fill-opacity:var(--band-a)' }, svg);
+        el('polyline', { points: o.band.avg.map((v, i) => `${X(i)},${Y(v)}`).join(' '), fill: 'none', stroke: 'var(--fg3)', 'stroke-width': 1.25 }, svg);
+      }
+      o.series.forEach(s => {
+        const pts = s.values.map((v, i) => `${X(i)},${Y(v)}`);
+        if (s.area) {
+          const base = Y(Math.max(lo, Math.min(hi, 0)));
+          el('polygon', { points: `${X(0)},${base} ${pts.join(' ')} ${X(n - 1)},${base}`, fill: s.color, 'fill-opacity': .1 }, svg);
+        }
+        el('polyline', { points: pts.join(' '), fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+        if (o.markers) s.values.forEach((v, i) => el('circle', { cx: X(i), cy: Y(v), r: 3, fill: s.color, stroke: 'var(--panel)', 'stroke-width': 1.5 }, svg));
+      });
+      // emphasise the latest point of the first series
+      const s0 = o.series[0];
+      el('circle', { cx: X(n - 1), cy: Y(s0.values[n - 1]), r: 4, fill: s0.color, stroke: 'var(--panel)', 'stroke-width': 2 }, svg);
+
+      // hover layer
+      const cross = el('line', { y1: M.t, y2: M.t + ih, stroke: 'var(--fg3)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+      const dots = o.series.map(s => el('circle', { r: 4.5, fill: s.color, stroke: 'var(--panel)', 'stroke-width': 2, visibility: 'hidden' }, svg));
+      const hit = el('rect', { x: M.l, y: 0, width: iw, height: H, fill: 'transparent' }, svg);
+      const hide = () => { cross.setAttribute('visibility', 'hidden'); dots.forEach(d => d.setAttribute('visibility', 'hidden')); tip.hidden = true; };
+      hit.addEventListener('pointermove', e => {
+        const rect = svg.getBoundingClientRect(), px = (e.clientX - rect.left) * (W / rect.width);
+        const i = Math.max(0, Math.min(n - 1, Math.round((px - M.l) / iw * (n - 1))));
+        cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.setAttribute('visibility', 'visible');
+        o.series.forEach((s, k) => { dots[k].setAttribute('cx', X(i)); dots[k].setAttribute('cy', Y(s.values[i])); dots[k].setAttribute('visibility', 'visible'); });
+        const head = isDate ? fmtDate(o.x[i]) : o.x[i];
+        const rows = o.series.map(s => `<div class="r"><span class="sw" style="background:${s.color}"></span>${s.name}<b>${o.tfmt(s.values[i])}</b></div>`);
+        if (o.band) rows.push(`<div class="r"><span class="sw" style="background:var(--fg3)"></span>5-yr avg<b>${o.tfmt(o.band.avg[i])}</b></div>`,
+                               `<div class="r"><span class="sw" style="background:var(--band);opacity:.5"></span>5-yr range<b>${o.tfmt(o.band.lo[i])}–${o.tfmt(o.band.hi[i])}</b></div>`);
+        tip.innerHTML = `<div class="t">${head}</div>${rows.join('')}`; tip.hidden = false;
+        const sx = X(i) * rect.width / W, tw = tip.offsetWidth;
+        tip.style.left = Math.max(0, Math.min(rect.width - tw, sx + 12 + tw > rect.width ? sx - tw - 12 : sx + 12)) + 'px';
+        tip.style.top = '4px';
+      });
+      hit.addEventListener('pointerleave', hide);
+    }
+    draw();
+    let w = host.clientWidth;
+    new ResizeObserver(() => { if (host.clientWidth !== w) { w = host.clientWidth; draw(); } }).observe(host);
+  }
+
+  // ---------- signals ----------
+  const slope = curveNow[0] - curveNow[11];
+  const crude = stocks[0], crudeDev = pct(crude.cur.at(-1), crude.avg.at(-1));
+  const rig13 = rigs.at(-1) - rigs.at(-14);
+  const mmNow = mmNet.at(-1);
+  const crackNow = crack.at(-1), crackAvg = crack.reduce((a, b) => a + b, 0) / crack.length;
+  const signals = [
+    { k: 'Curve', v: 'Backwardated', d: `M1−M12 ${sf(slope)} $/bbl`, tight: slope > 0 },
+    { k: 'Crude stocks', v: 'Below band', d: `${sf(crudeDev, 1)}% vs 5-yr avg`, tight: crudeDev < -2 },
+    { k: 'Refinery pull', v: crackNow > crackAvg ? 'Strong margins' : 'Weak margins', d: `3-2-1 crack $${f2(crackNow)} vs 12-mo avg $${f2(crackAvg)}`, tight: crackNow > crackAvg },
+    { k: 'Future supply', v: 'Rigs falling', d: `${sign(rig13)} rigs in 13 weeks · stale`, tight: rig13 < 0 },
+    { k: 'Positioning', v: 'Neutral', d: `MM net ${sf(mmNow, 1)}% of OI`, tight: false, neutral: true },
+  ];
+  const on = signals.filter(s => s.tight).length;
+  $('verdict-h').textContent = `${on} of ${signals.length} signals point tight`;
+  $('meter').innerHTML = signals.map(s => `<i class="${s.tight ? 'on' : ''}"></i>`).join('');
+  $('sigs').innerHTML = signals.map(s => `<div class="sig"><span class="k">${s.k}</span><span class="v">${s.v}<span class="lean ${s.tight ? 'tight' : ''}">${s.tight ? 'tight' : s.neutral ? 'neutral' : 'loose'}</span></span><span class="d">${s.d}</span></div>`).join('');
+
+  // ---------- panels ----------
+  const usd = v => '$' + f2(v);
+  tiles('price-tiles', [
+    { k: 'WTI Cushing', v: f2(wti.at(-1)), u: ' $/bbl', c: `${sf(wti.at(-1) - wti.at(-6))} 1 wk` },
+    { k: 'Brent', v: f2(brent.at(-1)), u: ' $/bbl', c: `${sf(brent.at(-1) - brent.at(-6))} 1 wk` },
+    { k: 'Brent − WTI', v: f2(spread.at(-1)), u: ' $/bbl', c: `${sf(spread.at(-1) - spread.at(-6))} 1 wk` },
+    { k: '3-2-1 crack', v: f2(crackNow), u: ' $/bbl', c: `12-mo avg ${f2(crackAvg)}` },
+  ]);
+  chart($('c-price'), { label: 'WTI and Brent spot price, 12 months', x: days, height: 220, series: [{ name: 'WTI', color: 'var(--s1)', values: wti }, { name: 'Brent', color: 'var(--s2)', values: brent }], tfmt: usd });
+  chart($('c-spread'), { label: 'Brent minus WTI spread', x: days, height: 150, series: [{ name: 'Brent − WTI', color: 'var(--s1)', values: spread }], tfmt: usd });
+  chart($('c-crack'), { label: '3-2-1 crack spread', x: days, height: 150, series: [{ name: '3-2-1 crack', color: 'var(--s1)', values: crack }], tfmt: usd });
+
+  tiles('curve-tiles', [
+    { k: 'M1 (Nov 26)', v: f2(curveNow[0]), u: ' $/bbl' },
+    { k: 'M12 (Oct 27)', v: f2(curveNow[11]), u: ' $/bbl' },
+    { k: 'M1 − M12', v: sf(slope), u: ' $/bbl', c: `${sf(slope / curveNow[0] * 100, 1)}% of M1` },
+  ]);
+  chart($('c-curve'), { label: 'WTI futures curve today, one month ago and one year ago', x: months, height: 210, markers: true,
+    series: [{ name: 'Today', color: 'var(--s1)', values: curveNow }, { name: '1 month ago', color: 'var(--s2)', values: curve1m }, { name: '1 year ago', color: 'var(--s3)', values: curve1y }], tfmt: usd });
+
+  tiles('pos-tiles', [
+    { k: 'MM net, % of OI', v: sf(mmNow, 1), u: '%', c: `${sf(mmNow - mmNet.at(-5), 1)} pts in 4 wks` },
+    { k: '52-wk range', v: `${f1(Math.min(...mmNet))} to ${f1(Math.max(...mmNet))}`, u: '%' },
+  ]);
+  chart($('c-pos'), { label: 'Managed money net position as percent of open interest', x: cotWeeks, height: 210, zero: true,
+    series: [{ name: 'MM net', color: 'var(--s1)', values: mmNet, area: true }], tfmt: v => sf(v, 1) + '%' });
+
+  $('inv').innerHTML = stocks.map(s => {
+    const d = pct(s.cur.at(-1), s.avg.at(-1));
+    return `<div class="chartbox"><h4>${s.name}<span>${f1(s.cur.at(-1))} mb · ${sf(d, 1)}% vs avg</span></h4><div class="chart" id="c-${s.key}"></div></div>`;
+  }).join('');
+  stocks.forEach(s => chart($('c-' + s.key), { label: `${s.name} stocks against 5-year range`, x: invWeeks, height: 160,
+    series: [{ name: 'Stocks', color: 'var(--s1)', values: s.cur }], band: { lo: s.lo, hi: s.hi, avg: s.avg }, tfmt: v => f1(v) + ' mb' }));
+  $('inv-table').innerHTML = '<thead><tr><th>Series</th><th>Latest (mb)</th><th>5-yr avg</th><th>5-yr low</th><th>5-yr high</th><th>vs avg</th><th>1-wk change</th></tr></thead><tbody>' +
+    stocks.map(s => `<tr><td>${s.name}</td><td>${f1(s.cur.at(-1))}</td><td>${f1(s.avg.at(-1))}</td><td>${f1(s.lo.at(-1))}</td><td>${f1(s.hi.at(-1))}</td><td>${sf(pct(s.cur.at(-1), s.avg.at(-1)), 1)}%</td><td>${sf(s.cur.at(-1) - s.cur.at(-2), 1)}</td></tr>`).join('') + '</tbody>';
+
+  tiles('sup-tiles', [
+    { k: 'US oil rigs', v: String(rigs.at(-1)), c: `${sign(rig13)} in 13 wks` },
+    { k: 'US crude production', v: f2(prod.at(-1)), u: ' mb/d', c: `${sf(prod.at(-1) - prod.at(-14))} in 13 wks` },
+  ]);
+  chart($('c-rigs'), { label: 'US oil rig count', x: rigWeeks, height: 170, series: [{ name: 'Oil rigs', color: 'var(--s1)', values: rigs }], tfmt: v => String(v) });
+  chart($('c-prod'), { label: 'US crude oil production', x: invWeeks, height: 170, series: [{ name: 'Production', color: 'var(--s1)', values: prod }], tfmt: v => f2(v) + ' mb/d' });
+})();
+</script>
