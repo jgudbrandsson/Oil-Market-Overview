@@ -19,15 +19,34 @@ sudo mkdir -p /etc/oil-dash
 echo 'EIA_API_KEY=your-key' | sudo tee /etc/oil-dash/env >/dev/null
 sudo chmod 600 /etc/oil-dash/env
 
-sudo cp systemd/oil-fetch-eia.* /etc/systemd/system/
+sudo cp systemd/oil-fetch-*.service systemd/oil-fetch-*.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now oil-fetch-eia.timer
+sudo systemctl enable --now oil-fetch-eia.timer oil-fetch-eia-curve.timer oil-fetch-yahoo.timer
 
 # First run: a normal fetch (creates /var/lib/oil-dash), then backfill history
 sudo systemctl start oil-fetch-eia.service
 sudo -u oildash env $(sudo cat /etc/oil-dash/env) OIL_DASH_DB=/var/lib/oil-dash/oil.db \
   .venv/bin/python -m oildash fetch eia --start 2000-01-01
 journalctl -u oil-fetch-eia -n 20   # look for failed series ids
+
+# Curve: start capturing today (Yahoo's back months can't be fetched later)
+sudo systemctl start oil-fetch-eia-curve.service oil-fetch-yahoo.service
+journalctl -u oil-fetch-yahoo -n 20  # look for failed contracts
+# EIA contracts 1-4 have history back to 1983
+sudo -u oildash env $(sudo cat /etc/oil-dash/env) OIL_DASH_DB=/var/lib/oil-dash/oil.db \
+  .venv/bin/python -m oildash fetch eia-curve --start 1983-04-01
+```
+
+Backup (the curve history exists nowhere else). Point it at a folder on a USB
+disk or NAS mount, owned by `oildash`; it refuses a folder on the SD card:
+
+```sh
+sudo mkdir -p /mnt/backup/oil-dash && sudo chown oildash /mnt/backup/oil-dash
+echo 'OIL_DASH_BACKUP_DIR=/mnt/backup/oil-dash' | sudo tee -a /etc/oil-dash/env >/dev/null
+sudo cp systemd/oil-backup.* /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now oil-backup.timer
+sudo systemctl start oil-backup.service && journalctl -u oil-backup -n 5
 ```
 
 Dashboard:

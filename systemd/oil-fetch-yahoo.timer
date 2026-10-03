@@ -1,0 +1,13 @@
+[Unit]
+Description=oil-dash: Yahoo curve schedule
+
+[Timer]
+# In the daily halt (17:00-18:00 ET): after the settle, before evening trading
+# opens, so the latest bar is the finished day and not the next session
+OnCalendar=Mon..Fri 17:15 America/New_York
+# Run on boot if the Pi was off at a scheduled time
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target
