@@ -96,3 +96,23 @@ def upsert_observations(
         data,
     )
     return len(data)
+
+
+def upsert_curve(
+    conn: sqlite3.Connection, rows: Iterable[tuple[str, str, str, float, str]]
+) -> int:
+    """Insert or overwrite (snapshot_date, root, contract_month, settle, source) rows.
+
+    EIA is the authoritative source for the months both sources cover, so a
+    Yahoo row never overwrites an EIA row. Nothing here ever deletes a snapshot.
+    """
+    data = list(rows)
+    conn.executemany(
+        """INSERT INTO curve_snapshots (snapshot_date, root, contract_month, settle, source)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT (snapshot_date, root, contract_month) DO UPDATE SET
+             settle = excluded.settle, source = excluded.source
+           WHERE excluded.source = 'eia' OR curve_snapshots.source <> 'eia'""",
+        data,
+    )
+    return len(data)

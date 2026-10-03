@@ -1,0 +1,34 @@
+{
+ "response": {
+  "total": 3,
+  "dateFormat": "YYYY-MM-DD",
+  "frequency": "daily",
+  "data": [
+   {
+    "period": "2026-10-02",
+    "series-description": "Cushing, OK Crude Oil Future Contract 1 (Dollars per Barrel)",
+    "value": 73.21,
+    "units": "$/BBL"
+   },
+   {
+    "period": "2026-10-01",
+    "series-description": "Cushing, OK Crude Oil Future Contract 1 (Dollars per Barrel)",
+    "value": "73.10",
+    "units": "$/BBL"
+   },
+   {
+    "period": "2026-09-30",
+    "series-description": "Cushing, OK Crude Oil Future Contract 1 (Dollars per Barrel)",
+    "value": 72.48,
+    "units": "$/BBL"
+   }
+  ]
+ },
+ "request": {
+  "command": "/v2/seriesid/PET.RCLC1.D",
+  "params": {
+   "start": "2026-09-30"
+  }
+ },
+ "apiVersion": "2.1.10"
+}

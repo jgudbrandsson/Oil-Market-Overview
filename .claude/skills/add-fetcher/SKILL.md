@@ -10,7 +10,7 @@ Reference implementation: `oildash/fetchers/eia.py`. Copy its shape; don't inven
 ## Steps
 
 1. **Series.** Add each series the panel needs to `config.toml` (`key`, `source`, `source_id`, `unit`, `frequency` D/W/M). Nothing the panels don't use.
-   Curve data is the exception: it goes to `curve_snapshots`, not `observations`.
+   Curve data is the exception: it goes to `curve_snapshots`, not `observations`, and has no `series` rows.
 2. **Fetcher module** `oildash/fetchers/<source>.py` with:
    - `SOURCE = "<source>"`
    - a pure `parse(payload_or_bytes, ...) -> rows` that raises a clear error when the format changes (missing column, sheet, key). Never return an empty list silently on a format change.
@@ -24,6 +24,14 @@ Reference implementation: `oildash/fetchers/eia.py`. Copy its shape; don't inven
 5. **Tests** `tests/test_<source>.py`, mirroring `tests/test_eia.py`: parse happy path, nulls/gaps, format change raises, one failing series doesn't block others, rerun is idempotent, failed write leaves no partial data, no secret in `fetch_log`.
 6. **systemd.** Add `systemd/oil-fetch-<source>.service` + `.timer` copied from the EIA pair. Timer: schedule from `DESIGN.md` §8, `Persistent=true`, timezone `America/New_York`.
 7. **Docs.** Update `DESIGN.md` §2 (series table) and §8 (schedule) if they changed; add the timer to the README install block.
+
+## Curve fetchers (`eia_curve.py`, `yahoo.py`)
+
+- Write with `db.upsert_curve` (rows `(snapshot_date, root, contract_month, settle, source)`). It never lets a `yahoo` row overwrite an `eia` row, and never deletes. Never add a cleanup or migration touching `curve_snapshots`: it can't be re-downloaded.
+- Map trade date + position to delivery month with `oildash/contracts.py`. A new root (BZ, RB, HO) needs its own expiry rule there, with tests against a few known expiry dates.
+- Trade dates are New York dates (`ZoneInfo("America/New_York")`), never the Pi's local date.
+- Keep only bars dated on or before both today and the contract's last trading day.
+- Yahoo: one request per contract, a pause between them, a browser-like User-Agent. Check `meta.symbol` matches the request.
 
 ## Check before pushing
 

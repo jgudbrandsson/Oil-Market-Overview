@@ -27,10 +27,12 @@ Config UI, audit logs, alerting, ML/forecasting, user accounts, mobile app, real
 | FRED | Macro joins: broad dollar index, CPI, industrial production | Daily–monthly | Free key | Low |
 | CFTC COT (Socrata API) | Disaggregated futures-only, managed money vs producer/merchant | Fri 15:30 ET for Tuesday data | No key | Low |
 | Baker Hughes | US oil rig count | Fri 13:00 ET | XLSX download, no API | Medium — URL/format changes |
-| Yahoo Finance (`yfinance`) | Individual contract months (e.g. `CLZ26.NYM`) for the full 12–24 month curve | Daily after settle | Unofficial scrape | **High** — breaks without notice, expired contracts vanish |
+| Yahoo Finance (chart endpoint, the one `yfinance` wraps) | Individual contract months (e.g. `CLZ26.NYM`) for the full 12–24 month curve | Daily after settle | Unofficial, no key; called with the standard library | **High** — breaks without notice, expired contracts vanish |
 | JODI | Monthly global stocks/demand by country | Monthly, ~2 month lag | CSV bulk download | Medium |
 
 **Challenge on yfinance:** it's the only free source for the back of the curve, but it's an unofficial scraper. Use EIA's M1–M4 contracts (`RCLC1`..`RCLC4`) as the authoritative short curve and treat Yahoo as a best-effort extension to M12. If Yahoo breaks, the curve panel degrades to M1–M4 instead of disappearing.
+
+Both go to `curve_snapshots`, not `observations`. EIA only names "contract 1..4", so `oildash/contracts.py` maps each trade date to delivery months with the CL expiry rule (3 business days before the 25th of the prior month; 4 if the 25th isn't a business day). Where both sources cover the same contract month, EIA's row wins and Yahoo never overwrites it. EIA M1–M4 history can be re-fetched (`fetch eia-curve --start 1983-04-01`); only Yahoo's back months are truly lost if not captured.
 
 Not available free: true replenishment lead times, tanker flows (Kpler/Vortexa), freight rates (Baltic). Proxy = curve shape (§4).
 
@@ -48,7 +50,8 @@ Not available free: true replenishment lead times, tanker flows (Kpler/Vortexa),
 | distillate_stocks | EIA `PET.WDISTUS1.W` | kbbl |
 | refinery_util | EIA `PET.WPULEUS3.W` | % |
 | us_crude_prod | EIA `PET.WCRFPUS2.W` | kbbl/d |
-| wti_fut_m1..m4 | EIA `PET.RCLC1.D`..`RCLC4.D` | $/bbl |
+| wti_fut_m1..m4 | EIA `PET.RCLC1.D`..`RCLC4.D` → `curve_snapshots` (source `eia`) | $/bbl |
+| CL M1–M12 | Yahoo `CL<month code><yy>.NYM` → `curve_snapshots` (source `yahoo`) | $/bbl |
 | usd_broad | FRED `DTWEXBGS` | index |
 | cot_wti | CFTC disaggregated, contract `067651` | contracts |
 | rigs_oil_us | Baker Hughes | count |
@@ -158,7 +161,7 @@ Rule of thumb: a price move backed by backwardation **and** below-band stocks is
 |---|---|---|
 | Power loss mid-transaction | SQLite WAL rolls back the uncommitted run; DB stays consistent | One transaction per source run. `fetch_log` row stays `running` → next run marks it `error` and retries. |
 | Missed scheduled run (Pi off) | Data gap until next run | systemd timer with `Persistent=true` runs on boot. Fetchers always request a trailing window (e.g. last 30 days), so gaps self-heal via upsert. |
-| SD card corruption | DB lost | Everything except `curve_snapshots` is re-downloadable from source history → `python -m oildash fetch <source> --start 2000-01-01` rebuilds it. Back up **only** what can't be re-fetched: nightly `sqlite3 .backup` of the DB to a non-SD location. |
+| SD card corruption | DB lost | Everything except `curve_snapshots` is re-downloadable from source history → `python -m oildash fetch <source> --start 2000-01-01` rebuilds it. Back up **only** what can't be re-fetched: nightly `python -m oildash backup` (SQLite online backup, integrity-checked, 14 dated copies kept) to a non-SD location. It refuses a folder on the same disk as the DB, so an unmounted USB disk fails loudly instead of backing up to the SD card. |
 | Source down / format change | That panel goes stale | Per-source process + staleness badge (C6). Fetcher fails loudly in `journalctl`. |
 | Yahoo breaks permanently | Curve shrinks to M1–M4 | EIA futures as the authoritative fallback (§2). |
 | Clock skew after power loss | Wrong `fetched_at` | Cosmetic only — `obs_date` comes from the source, not the clock. |
@@ -172,17 +175,19 @@ One service + timer pair per source (C6). Every fetch first syncs tables, views 
 | Unit | When | Why |
 |---|---|---|
 | `oil-fetch-eia` | Mon–Fri 19:00; Wed, Thu 12:00 | Daily spot after NYMEX settle; WPSR stocks (Thursday run covers holiday weeks, upserts make it harmless) |
-| `oil-fetch-yahoo` | Mon–Fri 19:00 | Curve snapshot |
+| `oil-fetch-eia-curve` | Mon–Fri 19:00 | EIA futures contracts 1–4 |
+| `oil-fetch-yahoo` | Mon–Fri 17:15 | CL contracts M1–M12. In the 17:00–18:00 halt, so the newest bar is the finished day and not the evening session |
 | `oil-fetch-cftc`, `oil-fetch-bakerhughes` | Fri 17:00 | COT, rig count |
 | `oil-fetch-jodi` | 20th of month | JODI |
-| `oil-backup` | Daily 03:00 | `.backup` to off-SD storage |
+| `oil-backup` | Daily 03:00 | Copy to off-SD storage (`OIL_DASH_BACKUP_DIR`) |
 
 ## 9. Repo layout
 
 ```
 oil-dash/
-├── oildash/         # python -m oildash {init-db, fetch <source>, serve}; web.py serves the board
-│   └── fetchers/    # eia.py, then cftc.py, bakerhughes.py, yahoo.py, …
+├── oildash/         # python -m oildash {init-db, fetch <source>, serve, backup}; web.py serves the board
+│   ├── contracts.py # CL expiry calendar: trade date + position → delivery month
+│   └── fetchers/    # eia.py, eia_curve.py, yahoo.py, then cftc.py, bakerhughes.py, …
 ├── db/              # schema.sql, views.sql
 ├── dashboard/       # index.html: the board, fed by /api/board
 ├── docs/            # mockup.html: visual reference with sample data
@@ -203,5 +208,5 @@ Each step is usable on its own; stop at any point.
 
 ## Open decisions (yours)
 
-- Backup target: NAS, USB disk, or a private GitHub repo/release for the curve table only.
+- Backup target: USB disk or NAS mount (the code takes any mounted folder). A private GitHub repo/release would need a token and its own code.
 - Which product curves to snapshot beyond CL: BZ, RB, HO cost nothing extra in storage, but each Yahoo root is another thing to break.
