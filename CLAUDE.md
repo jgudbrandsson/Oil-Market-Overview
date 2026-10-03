@@ -37,3 +37,7 @@ Check the change against C1–C6 and ask what breaks (power loss, a source being
 ## Tracking
 
 Work is tracked in GitHub issues (#2–#6, one per build step). One issue per session; the PR says `Closes #N`. Tick the issue's checklist as tasks land. Don't create new issues without asking.
+
+## Talking to the owner
+
+Whenever you tell the owner to merge a PR, explain in plain words what merging it does: what lands on `main`, what changes on the Pi or in future sessions, which issues close, and whether it can be undone.
