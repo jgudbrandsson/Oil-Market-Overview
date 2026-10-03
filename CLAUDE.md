@@ -41,3 +41,5 @@ Work is tracked in GitHub issues (#2–#6, one per build step). One issue per se
 ## Talking to the owner
 
 Whenever you tell the owner to merge a PR, explain in plain words what merging it does: what lands on `main`, what changes on the Pi or in future sessions, which issues close, and whether it can be undone.
+
+When comparing options, include a rough Claude token estimate for each: building it, and ongoing upkeep. Give ranges, and say what drives the number (session length, files read, retries).
